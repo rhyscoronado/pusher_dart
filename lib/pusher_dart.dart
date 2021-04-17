@@ -27,7 +27,7 @@ class PusherAuth {
 @immutable
 class PusherOptions {
   /// A URL string to send the authentication request to
-  final String authEndpoint;
+  final Uri authEndpoint;
   final PusherAuth auth;
 
   // for using a different host or port

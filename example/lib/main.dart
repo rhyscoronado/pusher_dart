@@ -37,7 +37,7 @@ class _MyHomePageState extends State<MyHomePage> {
   final _pusher = Pusher(
       'PUSHER_APP_KEY',
       PusherOptions(
-          authEndpoint: 'PUSHER_AUTH_URL',
+          authEndpoint: Uri.parse('PUSHER_AUTH_URL'),
           auth: PusherAuth(headers: {
             'Authorization': 'Bearer token',
             'Content-Type': 'application/json',

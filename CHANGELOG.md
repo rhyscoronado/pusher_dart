@@ -1,3 +1,6 @@
+## [0.3.0] - 18/04/2021
+Updated library for null safety
+
 ## [0.2.0] - 24/07/2019
 Added example repository, documented classes
 
