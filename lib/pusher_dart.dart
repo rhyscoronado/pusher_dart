@@ -8,8 +8,6 @@ import 'package:meta/meta.dart';
 import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
-
-
 /// Class to hold headers to send to authentication endpoint
 /// Ex. `PusherAuth(headers: {'Authorization': 'Bearer $token'})`
 @immutable
@@ -65,8 +63,7 @@ class Channel with _EventEmitter {
   /// @see https://pusher.com/docs/channels/getting_started/javascript#listen-for-events-on-your-channel
   bool trigger(String eventName, Object data) {
     try {
-      _connection.webSocketChannel.sink
-          .add(jsonEncode({'event': eventName, 'data': data}));
+      _connection.webSocketChannel.sink.add(jsonEncode({'event': eventName, 'data': data}));
       return true;
     } catch (e) {
       return false;
@@ -80,17 +77,16 @@ class Channel with _EventEmitter {
     if (name.startsWith('private-') || name.startsWith('presence-')) {
       auth = await _connection.authenticate(name);
     }
-    return trigger('pusher:subscribe',
-        {'channel': name, 'auth': auth, 'channel_data': _data});
+    return trigger('pusher:subscribe', {'channel': name, 'auth': auth, 'channel_data': _data});
   }
 }
 
 mixin _EventEmitter {
-  final Map<String, Set<Function(Object? data)>> _listeners = {};
+  final Map<String, Set<Function(Object data)>> _listeners = {};
 
-  void bind(String eventName, Function(Object? data) callback) {
+  void bind(String eventName, Function(Object data) callback) {
     if (_listeners[eventName] == null) {
-      _listeners[eventName] = Set<Function(Object? data)>();
+      _listeners[eventName] = Set<Function(Object data)>();
     }
     _listeners[eventName]!.add(callback);
   }
@@ -103,7 +99,7 @@ mixin _EventEmitter {
 
   void _broadcast(String? eventName, [Object? data]) {
     (_listeners[eventName!] ?? Set()).forEach((listener) {
-      listener(data);
+      listener(data!);
     });
   }
 }
@@ -140,8 +136,8 @@ class Connection with _EventEmitter {
       String domain = protocol + host + ":" + options.port.toString();
       if (Pusher.log != null) Pusher.log('connecting to ' + domain);
 
-      webSocketChannel = IOWebSocketChannel.connect(domain +
-          '/app/$apiKey?protocol=5&client=dart-libPusher&version=0.1.0');
+      webSocketChannel = IOWebSocketChannel.connect(
+          domain + '/app/$apiKey?protocol=5&client=dart-libPusher&version=0.1.0');
 
       webSocketChannel.stream.listen(_handleMessage);
     } catch (e) {
@@ -155,8 +151,7 @@ class Connection with _EventEmitter {
   /// Authenticate a specific channel
   Future<String?> authenticate(String channelName) async {
     if (socketId == null)
-      throw WebSocketChannelException(
-          'Pusher has not yet established connection');
+      throw WebSocketChannelException('Pusher has not yet established connection');
     final response = await http.post(options.authEndpoint!,
         headers: options.auth!.headers,
         body: jsonEncode({'channel_name': channelName, 'socket_id': socketId}));
@@ -228,8 +223,7 @@ class Connection with _EventEmitter {
   }
 
   void _handlePusherError(Map<String, Object>? json) {
-    final int errorCode =
-        json == null || json['code'] == null ? 1 : json['code'] as int;
+    final int errorCode = json == null || json['code'] == null ? 1 : json['code'] as int;
     if (errorCode >= 4200) {
       _connect();
     } else if (errorCode > 4100) {
