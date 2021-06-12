@@ -1,6 +1,8 @@
 # Pusher
 Unofficial pusher client for dart.
 
+# Updated this to null safety
+
 ## Usage
 Using this package is similar to how one would use PusherJS.
 
