@@ -1,11 +1,11 @@
 name: pusher_dart
 description: Unofficial pusher client for dart
-version: 0.2.0+1
+version: 0.3.0+2
 author: "Prabhakar Bhat <prabhakarbhat@live.com>"
-homepage: https://github.com/jaysson/pusher_dart
+homepage: https://github.com/rhyscoronado/pusher_dart
 
 environment:
-  sdk: ">=2.1.0 <3.0.0"
+  sdk: '>=2.12.0 <3.0.0'
 
 dependencies:
   web_socket_channel: ^2.0.0

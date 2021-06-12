@@ -16,7 +16,7 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 class PusherAuth {
   /// HTTP Headers
   /// Ex. `{'Authorization': 'Bearer $token'}`
-  final Map<String, String> headers;
+  final Map<String, String>? headers;
 
   /// Default constructor
   PusherAuth({this.headers});
@@ -27,11 +27,11 @@ class PusherAuth {
 @immutable
 class PusherOptions {
   /// A URL string to send the authentication request to
-  final Uri authEndpoint;
-  final PusherAuth auth;
+  final Uri? authEndpoint;
+  final PusherAuth? auth;
 
   // for using a different host or port
-  final String host;
+  final String? host;
   final int port;
 
   //use wss or ws
@@ -56,11 +56,11 @@ class Channel with _EventEmitter {
   /// Channel name
   /// Ex. `private-Customer.1`
   final String name;
-  String _data;
+  String? _data;
   Connection _connection;
 
   /// Default constructor
-  Channel(this.name, this._connection, [String _data]);
+  Channel(this.name, this._connection, [String? _data]);
 
   /// @see https://pusher.com/docs/channels/getting_started/javascript#listen-for-events-on-your-channel
   bool trigger(String eventName, Object data) {
@@ -76,7 +76,7 @@ class Channel with _EventEmitter {
   /// Subscribes to the channel
   /// If it is a private channel, authenticates using provided details
   Future<bool> connect() async {
-    String auth;
+    String? auth;
     if (name.startsWith('private-') || name.startsWith('presence-')) {
       auth = await _connection.authenticate(name);
     }
@@ -86,23 +86,23 @@ class Channel with _EventEmitter {
 }
 
 mixin _EventEmitter {
-  final Map<String, Set<Function(Object data)>> _listeners = {};
+  final Map<String, Set<Function(Object? data)>> _listeners = {};
 
-  void bind(String eventName, Function(Object data) callback) {
+  void bind(String eventName, Function(Object? data) callback) {
     if (_listeners[eventName] == null) {
-      _listeners[eventName] = Set<Function(Object data)>();
+      _listeners[eventName] = Set<Function(Object? data)>();
     }
-    _listeners[eventName].add(callback);
+    _listeners[eventName]!.add(callback);
   }
 
   void unbind(String eventName, Function(Object data) callback) {
     if (_listeners[eventName] != null) {
-      _listeners[eventName].remove(callback);
+      _listeners[eventName]!.remove(callback);
     }
   }
 
-  void _broadcast(String eventName, [Object data]) {
-    (_listeners[eventName] ?? Set()).forEach((listener) {
+  void _broadcast(String? eventName, [Object? data]) {
+    (_listeners[eventName!] ?? Set()).forEach((listener) {
       listener(data);
     });
   }
@@ -115,13 +115,13 @@ class Connection with _EventEmitter {
   String state = 'initialized';
 
   /// Socket ID provided by pusher
-  String socketId;
+  String? socketId;
 
   /// Get the API key from pusher dashboard.
   String apiKey;
   PusherOptions options;
   int _retryIn = 1;
-  IOWebSocketChannel webSocketChannel;
+  late IOWebSocketChannel webSocketChannel;
   final Map<String, Channel> channels = {};
 
   /// Default constructor
@@ -153,12 +153,12 @@ class Connection with _EventEmitter {
   }
 
   /// Authenticate a specific channel
-  Future<String> authenticate(String channelName) async {
+  Future<String?> authenticate(String channelName) async {
     if (socketId == null)
       throw WebSocketChannelException(
           'Pusher has not yet established connection');
-    final response = await http.post(options.authEndpoint,
-        headers: options.auth.headers,
+    final response = await http.post(options.authEndpoint!,
+        headers: options.auth!.headers,
         body: jsonEncode({'channel_name': channelName, 'socket_id': socketId}));
     if (response.statusCode == 200) {
       return jsonDecode(response.body)['auth'];
@@ -166,22 +166,22 @@ class Connection with _EventEmitter {
     throw response;
   }
 
-  _handleMessage(Object message) {
+  _handleMessage(Object? message) {
     if (Pusher.log != null) Pusher.log(message);
-    final json = Map<String, Object>.from(jsonDecode(message));
-    final String eventName = json['event'];
+    final json = Map<String, Object>.from(jsonDecode(message as String));
+    final String? eventName = json['event'] as String?;
     final data = json['data'];
     _broadcast(eventName, data);
     switch (eventName) {
       case 'pusher:connection_established':
-        socketId = jsonDecode(data)['socket_id'];
+        socketId = jsonDecode(data as String)['socket_id'];
         state = 'connected';
         _broadcast('connected', data);
         _subscribeAll();
         break;
       case 'pusher:error':
         _broadcast('error', data);
-        _handlePusherError(data);
+        _handlePusherError(data as Map<String, Object>?);
         break;
       default:
         _handleChannelMessage(json);
@@ -189,9 +189,9 @@ class Connection with _EventEmitter {
   }
 
   _handleChannelMessage(Map<String, Object> message) {
-    final channel = channels[message['channel']];
+    final channel = channels[message['channel'] as String];
     if (channel != null) {
-      channel._broadcast(message['event'], message['data']);
+      channel._broadcast(message['event'] as String?, message['data']);
     }
   }
 
@@ -202,7 +202,7 @@ class Connection with _EventEmitter {
   }
 
   /// Subscribe to channel using channel name
-  Channel subscribe(String channelName, [String data]) {
+  Channel subscribe(String channelName, [String? data]) {
     final channel = Channel(channelName, this, data);
     channels[channelName] = channel;
     if (state == 'connected') {
@@ -227,9 +227,9 @@ class Connection with _EventEmitter {
     }));
   }
 
-  void _handlePusherError(Map<String, Object> json) {
+  void _handlePusherError(Map<String, Object>? json) {
     final int errorCode =
-        json == null || json['code'] == null ? 1 : json['code'];
+        json == null || json['code'] == null ? 1 : json['code'] as int;
     if (errorCode >= 4200) {
       _connect();
     } else if (errorCode > 4100) {
@@ -244,7 +244,7 @@ class Pusher with _EventEmitter {
     print('Pusher: $message');
   };
 
-  Connection _connection;
+  late Connection _connection;
 
   /// Default constructor
   Pusher(String apiKey, PusherOptions options) {
@@ -257,12 +257,12 @@ class Pusher with _EventEmitter {
   }
 
   /// Get a channel using channel name
-  Channel channel(String channelName) {
+  Channel? channel(String channelName) {
     return _connection.channels[channelName];
   }
 
   /// Subscribe to a channel using channel name
-  Channel subscribe(String channelName, [String data]) {
+  Channel subscribe(String channelName, [String? data]) {
     return _connection.subscribe(channelName, data);
   }
 
