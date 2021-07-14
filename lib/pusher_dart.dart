@@ -163,7 +163,7 @@ class Connection with _EventEmitter {
 
   _handleMessage(Object? message) {
     if (Pusher.log != null) Pusher.log(message);
-    final json = Map<String, Object>.from(jsonDecode(message as String));
+    final json = Map<String?, Object>.from(jsonDecode(message as String));
     final String? eventName = json['event'] as String?;
     final data = json['data'];
     _broadcast(eventName, data);
@@ -183,8 +183,9 @@ class Connection with _EventEmitter {
     }
   }
 
-  _handleChannelMessage(Map<String, Object> message) {
-    final channel = channels[message['channel'] as String];
+  _handleChannelMessage(Map<String?, Object> message) {
+    final channel =
+        channels[message['channel']] != null ? channels[message['channel'] as String] : null;
     if (channel != null) {
       channel._broadcast(message['event'] as String?, message['data']);
     }
